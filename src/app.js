@@ -1,7 +1,7 @@
 import cors from 'cors';
 import express from 'express';
 import fileUpload from 'express-fileupload';
-import fs from 'fs'; // Asegúrate de importar fs
+import fs from 'fs';
 import path from 'path';
 import serveIndex from 'serve-index';
 import { fileURLToPath } from 'url';
@@ -38,34 +38,49 @@ app.use(express.json());
 app.use(fileUpload({
   createParentPath: true,
 }));
+
+// Asegura que se pueda acceder a los archivos estáticos (imágenes)
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Endpoint para listar imágenes
 app.get('/api/images/producto', (req, res) => {
   const dirPath = path.join(__dirname, 'uploads/img/producto');
-  fs.readdir(dirPath, (err, files) => {
-    if (err) {
-      return res.status(500).send('Error al leer el directorio.');
+
+  // Log para verificar la ruta
+  console.log('Ruta del directorio de imágenes:', dirPath);
+
+  // Verifica si el directorio existe
+  fs.exists(dirPath, (exists) => {
+    if (!exists) {
+      return res.status(404).send('Directorio no encontrado.');
     }
-    const images = files.filter(file => /\.(jpg|jpeg|png|gif)$/i.test(file));
-    res.json(images);
+
+    fs.readdir(dirPath, (err, files) => {
+      if (err) {
+        console.error('Error al leer el directorio:', err);
+        return res.status(500).send('Error al leer el directorio.');
+      }
+
+      // Filtra solo las imágenes válidas
+      const images = files.filter(file => /\.(jpg|jpeg|png|gif)$/i.test(file));
+      res.json(images);
+    });
   });
 });
 
+// Configuración para servir otros directorios
 app.use('/uploads/img/pedido', serveIndex(path.join(__dirname, 'uploads/img/pedido'), { icons: true }));
 app.use('/uploads/img/fecha_especial', serveIndex(path.join(__dirname, 'uploads/img/fecha_especial'), { icons: true }));
 app.use('/uploads/img/tipo_flor', serveIndex(path.join(__dirname, 'uploads/img/tipo_flor'), { icons: true }));
 app.use('/uploads/img/evento', serveIndex(path.join(__dirname, 'uploads/img/evento'), { icons: true }));
 
-// Monta las rutas con rutas base
+// Rutas de la API
 app.use(usuarioRoutes, productoRoutes, opcionadicionalRoutes, pedidoRoutes, pedidoitemRoutes, carritoItemRoutes, pagoRoutes, carritoRoutes, eventoRoutes, tipoFlorRoutes, fechaEspecialRoutes, AuthRouter);
 
 // Middleware para manejo de errores
 app.use((err, req, res, next) => {
-  console.error(err.stack);
+  console.error('Error en el servidor:', err.stack);
   res.status(500).json({ message: 'Algo salió mal. Intenta nuevamente más tarde.' });
 });
-
-app.use('/api', AuthRouter);
 
 export default app;
