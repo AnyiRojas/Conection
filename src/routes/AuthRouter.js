@@ -13,7 +13,7 @@ router.post('/api/reset-password', AuthController.resetPassword);
 // Redirigir al usuario a la página de restablecimiento de contraseña del frontend con el token en la URL
 router.get('/reset-password/:token', (req, res) => {
     const { token } = req.params;
-    res.redirect(`https://distribuidora-rho.vercel.app/reset-password/${token}`); // Redirige al frontend
+    res.redirect(`https://distribuidora-one.vercel.app/reset-password/${token}`); // Redirige al frontend
 });
 
 export default router;
