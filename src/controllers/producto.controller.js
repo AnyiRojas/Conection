@@ -1,11 +1,10 @@
-import Producto from "../models/Producto.js";
 import path from 'path';
 import { fileURLToPath } from 'url';
-import fs from 'fs';
+import Producto from "../models/Producto.js";
 
 // Obtener el nombre del archivo actual y el directorio
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const _dirname = path.dirname(__filename);
 
 class ProductoController {
   // Obtener todos los productos
@@ -81,25 +80,16 @@ class ProductoController {
     const uploadedFile = req.files.foto_Producto;
     const timestamp = Date.now();
     const uniqueFileName = `${uploadedFile.name.split('.')[0]}_${timestamp}.${uploadedFile.name.split('.').pop()}`;
-    const uploadPath = path.join(__dirname, '../uploads/img/producto/', uniqueFileName);
+    const uploadPath = path.join(_dirname, '../uploads/img/producto/', uniqueFileName);
     const foto_ProductoURL = `https://conection-gap0.onrender.com/uploads/img/producto/${uniqueFileName}`;
-
-    // Imprimir información del archivo para depurar
-    console.log('Archivo recibido:', uploadedFile.name);
-    console.log('Ruta de subida:', uploadPath);
 
     // Mover el archivo subido
     uploadedFile.mv(uploadPath, async (err) => {
       if (err) {
-        console.error('Error al mover el archivo:', err);
         return res.status(500).json({ message: 'Error al subir la imagen', error: err });
       }
 
-      // Si el archivo se movió correctamente, procedemos con la creación del producto
       try {
-        // Imprimir el cuerpo de la solicitud para depurar los datos recibidos
-        console.log('Datos recibidos del producto:', req.body);
-
         const {
           codigo_producto,
           nombre_producto,
@@ -116,7 +106,6 @@ class ProductoController {
           return res.status(400).json({ message: 'Faltan datos requeridos' });
         }
 
-        // Crear el objeto del producto con los datos
         const productoData = {
           codigo_producto: parseInt(codigo_producto),
           nombre_producto,
@@ -131,15 +120,9 @@ class ProductoController {
         };
 
         // Depurar los datos del producto antes de la creación
-        console.log('Producto a crear:', productoData);
+        console.log('Datos del producto:', productoData);
 
-        // Verificar si Producto.crearProducto está disponible y lo ejecuta correctamente
-        const result = await Producto.crearProducto(productoData);
-        if (!result) {
-          console.error('Error al insertar el producto en la base de datos');
-          return res.status(500).json({ message: 'Error al insertar el producto en la base de datos' });
-        }
-
+        await Producto.crearProducto(productoData);
         res.status(201).json({ message: 'Producto creado correctamente' });
       } catch (error) {
         console.error('Error al crear producto:', error);
@@ -148,83 +131,83 @@ class ProductoController {
     });
   }
 
-    // Actualizar un producto
-    static async actualizarProducto(req, res) {
-      const { idProducto } = req.params;
-    
-      const {
-        codigo_producto,
-        nombre_producto,
-        descripcion_producto,
-        precio_producto,
-        id_tipo_flor,
-        id_evento,
-        id_fecha_especial,
-      } = req.body;
-    
-      let foto_ProductoURL = null;
-      let foto_ProductoPath = null;
-    
-      if (req.files && req.files.foto_Producto) {
-        const uploadedFile = req.files.foto_Producto;
-        const timestamp = Date.now();
-        const uniqueFileName = `${timestamp}_${uploadedFile.name}`;
-        const uploadPath = path.join(__dirname, '../uploads/img/producto/', uniqueFileName);
-    
-        await uploadedFile.mv(uploadPath);
-        foto_ProductoURL = `https://conection-gap0.onrender.com/uploads/img/producto/${uniqueFileName}`;
-        foto_ProductoPath = `./uploads/img/producto/${uniqueFileName}`;
-      } else {
-        // Si no hay nueva foto, mantener la foto actual
-        const existingProduct = await Producto.obtenerProductoPorId(idProducto);
-        foto_ProductoPath = existingProduct.foto_Producto; // Mantener la foto actual
-        foto_ProductoURL = existingProduct.foto_ProductoURL; // Mantener la URL actual
-      }
-    
-      const updatedData = {
-        id_producto: idProducto,
-        codigo_producto,
-        nombre_producto,
-        foto_Producto: foto_ProductoPath,
-        foto_ProductoURL,
-        descripcion_producto,
-        precio_producto,
-        id_tipo_flor,
-        id_evento,
-        id_fecha_especial
-      };
-    
-      try {
-        await Producto.actualizarProducto(updatedData);
-        res.json({ message: 'Producto actualizado correctamente' });
-      } catch (error) {
-        console.error('Error al actualizar producto:', error);
-        res.status(500).json({ message: 'Error al actualizar producto', error });
-      }
-    }  
+  // Actualizar un producto
+  static async actualizarProducto(req, res) {
+    const { idProducto } = req.params;
+
+    const {
+      codigo_producto,
+      nombre_producto,
+      descripcion_producto,
+      precio_producto,
+      id_tipo_flor,
+      id_evento,
+      id_fecha_especial,
+    } = req.body;
+
+    let foto_ProductoURL = null;
+    let foto_ProductoPath = null;
+
+    if (req.files && req.files.foto_Producto) {
+      const uploadedFile = req.files.foto_Producto;
+      const timestamp = Date.now();
+      const uniqueFileName = `${timestamp}_${uploadedFile.name}`;
+      const uploadPath = path.join(_dirname, '../uploads/img/producto/', uniqueFileName);
+
+      await uploadedFile.mv(uploadPath);
+      foto_ProductoURL = `https://conection-gap0.onrender.com/uploads/img/producto/${uniqueFileName}`;
+      foto_ProductoPath = `./uploads/img/producto/${uniqueFileName}`;
+    } else {
+      // Si no hay nueva foto, mantener la foto actual
+      const existingProduct = await Producto.obtenerProductoPorId(idProducto);
+      foto_ProductoPath = existingProduct.foto_Producto; // Mantener la foto actual
+      foto_ProductoURL = existingProduct.foto_ProductoURL; // Mantener la URL actual
+    }
+
+    const updatedData = {
+      id_producto: idProducto,
+      codigo_producto,
+      nombre_producto,
+      foto_Producto: foto_ProductoPath,
+      foto_ProductoURL,
+      descripcion_producto,
+      precio_producto,
+      id_tipo_flor,
+      id_evento,
+      id_fecha_especial
+    };
+
+    try {
+      await Producto.actualizarProducto(updatedData);
+      res.json({ message: 'Producto actualizado correctamente' });
+    } catch (error) {
+      console.error('Error al actualizar producto:', error);
+      res.status(500).json({ message: 'Error al actualizar producto', error });
+    }
+  }
 
   static async actualizarCantidad(req, res) {
     const { idProducto } = req.params;
     const { nuevaCantidad } = req.body;
 
     try {
-        const producto = await Producto.obtenerProductoPorId(idProducto);
-        if (!producto) {
-            return res.status(404).json({ message: 'Producto no encontrado' });
-        }
+      const producto = await Producto.obtenerProductoPorId(idProducto);
+      if (!producto) {
+        return res.status(404).json({ message: 'Producto no encontrado' });
+      }
 
-        // Aquí puedes validar que la nueva cantidad sea válida
-        if (nuevaCantidad < 0) {
-            return res.status(400).json({ message: 'La cantidad no puede ser negativa' });
-        }
+      // Aquí puedes validar que la nueva cantidad sea válida
+      if (nuevaCantidad < 0) {
+        return res.status(400).json({ message: 'La cantidad no puede ser negativa' });
+      }
 
-        await Producto.actualizarCantidadDisponible(idProducto, nuevaCantidad);
-        return res.status(200).json({ message: 'Cantidad disponible actualizada', nuevaCantidad });
+      await Producto.actualizarCantidadDisponible(idProducto, nuevaCantidad);
+      return res.status(200).json({ message: 'Cantidad disponible actualizada', nuevaCantidad });
     } catch (error) {
-        console.error('Error al actualizar cantidad de producto:', error);
-        return res.status(500).json({ message: 'Error al actualizar cantidad de producto', error: error.message });
+      console.error('Error al actualizar cantidad de producto:', error);
+      return res.status(500).json({ message: 'Error al actualizar cantidad de producto', error: error.message });
     }
-}
+  }
 
   // Cambiar estado de un producto (activado/desactivado)
   static async cambiarEstadoProducto(req, res) {
