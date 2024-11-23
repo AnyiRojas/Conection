@@ -30,7 +30,7 @@ const app = express();
 
 // Middleware
 app.use(cors({
-  origin: 'https://distribuidora-one.vercel.app', // Cambia esto al origen de tu frontend
+  origin: 'https://distribuidora-psi.vercel.app', // Cambia esto al origen de tu frontend
   credentials: true // Permite el envío de cookies y encabezados de autenticación
 }));
 
