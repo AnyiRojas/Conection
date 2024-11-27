@@ -1,6 +1,7 @@
 import Evento from "../models/Evento.js";
 import path from 'path';
 import { fileURLToPath } from 'url';
+import fs from 'fs';
 
 // Obtener el nombre del archivo actual y el directorio
 const __filename = fileURLToPath(import.meta.url);
@@ -33,8 +34,8 @@ class EventoController {
     }
   }
 
-  // Crear un nuevo evento
   static async crearEvento(req, res) {
+    // Verificar si el archivo fue enviado
     if (!req.files || !req.files.foto_evento) {
       return res.status(400).json({ message: 'No se subió ninguna imagen' });
     }
@@ -42,38 +43,47 @@ class EventoController {
     const uploadedFile = req.files.foto_evento;
     const timestamp = Date.now();
     const uniqueFileName = `${uploadedFile.name.split('.')[0]}_${timestamp}.${uploadedFile.name.split('.').pop()}`;
-    const uploadPath = path.join(__dirname, '../uploads/img/evento/', uniqueFileName);
+    const uploadDir = path.join(__dirname, '../uploads/img/evento/');
+    const uploadPath = path.join(uploadDir, uniqueFileName);
     const foto_eventoURL = `https://conection-ood1.onrender.com/uploads/img/evento/${uniqueFileName}`;
 
-    // Mover el archivo subido
-    uploadedFile.mv(uploadPath, async (err) => {
+    // Asegurarse de que la carpeta exista
+    fs.mkdir(uploadDir, { recursive: true }, (err) => {
       if (err) {
-        return res.status(500).json({ message: 'Error al subir la imagen', error: err });
+        return res.status(500).json({ message: 'Error al crear el directorio', error: err });
       }
 
-      try {
-        const { nombre_evento, descripcion } = req.body;
-
-        if (!nombre_evento || !descripcion) {
-          return res.status(400).json({ message: 'Faltan datos requeridos' });
+      // Mover el archivo subido a la carpeta correspondiente
+      uploadedFile.mv(uploadPath, async (err) => {
+        if (err) {
+          return res.status(500).json({ message: 'Error al subir la imagen', error: err });
         }
 
-        const eventoData = {
-          nombre_evento,
-          foto_evento: `./uploads/img/evento/${uniqueFileName}`,
-          foto_eventoURL,
-          descripcion
-        };
+        try {
+          // Recibe los datos del evento desde el body de la solicitud
+          const { nombre_evento, descripcion } = req.body;
 
-        // Depurar los datos del evento antes de la creación
-        console.log('Datos del evento:', eventoData);
+          if (!nombre_evento || !descripcion) {
+            return res.status(400).json({ message: 'Faltan datos requeridos' });
+          }
 
-        await Evento.createEvento(eventoData.nombre_evento, eventoData.foto_evento, eventoData.foto_eventoURL, eventoData.descripcion);
-        res.status(201).json({ message: 'Evento creado correctamente' });
-      } catch (error) {
-        console.error('Error al crear evento:', error);
-        res.status(500).json({ message: 'Error al crear evento', error });
-      }
+          // Prepara los datos del evento
+          const eventoData = {
+            nombre_evento,
+            foto_evento: `./uploads/img/evento/${uniqueFileName}`, // Ruta del archivo en el servidor
+            foto_eventoURL,
+            descripcion
+          };
+
+          // Guarda el evento en la base de datos
+          await Evento.createEvento(eventoData.nombre_evento, eventoData.foto_evento, eventoData.foto_eventoURL, eventoData.descripcion);
+
+          res.status(201).json({ message: 'Evento creado correctamente' });
+        } catch (error) {
+          console.error('Error al crear evento:', error);
+          res.status(500).json({ message: 'Error al crear evento', error });
+        }
+      });
     });
   }
 
